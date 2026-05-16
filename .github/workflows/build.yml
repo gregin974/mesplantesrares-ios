@@ -43,7 +43,13 @@ jobs:
       - name: Export IPA
         run: |
           mkdir -p "${{ github.workspace }}/build/Payload"
-          cp -R "${{ github.workspace }}/build/MesPlantesRares.xcarchive/Products/Applications/MesPlantesRares.app" "${{ github.workspace }}/build/Payload/"
+          APP_PATH=$(find "${{ github.workspace }}/build/MesPlantesRares.xcarchive/Products/Applications" -name "*.app" -maxdepth 1 | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: No .app found in xcarchive"
+            ls -la "${{ github.workspace }}/build/MesPlantesRares.xcarchive/Products/Applications/"
+            exit 1
+          fi
+          cp -R "$APP_PATH" "${{ github.workspace }}/build/Payload/"
           cd "${{ github.workspace }}/build"
           zip -r "MesPlantesRares.ipa" Payload
           echo "IPA created at build/MesPlantesRares.ipa"
