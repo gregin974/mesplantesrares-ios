@@ -1,0 +1,68 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: MesPlantesRaresApp
+        run: xcodegen generate
+
+      - name: Build
+        working-directory: MesPlantesRaresApp
+        run: |
+          xcodebuild \
+            -project MesPlantesRares.xcodeproj \
+            -scheme MesPlantesRares \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "${{ github.workspace }}/build/MesPlantesRares.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM=""
+
+      - name: Export IPA
+        run: |
+          mkdir -p "${{ github.workspace }}/build/Payload"
+          cp -R "${{ github.workspace }}/build/MesPlantesRares.xcarchive/Products/Applications/MesPlantesRares.app" "${{ github.workspace }}/build/Payload/"
+          cd "${{ github.workspace }}/build"
+          zip -r "MesPlantesRares.ipa" Payload
+          echo "IPA created at build/MesPlantesRares.ipa"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MesPlantesRares.ipa
+          path: build/MesPlantesRares.ipa
+          retention-days: 30
+
+      - name: Upload IPA to Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Build #${{ github.run_number }}"
+          files: build/MesPlantesRares.ipa
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
