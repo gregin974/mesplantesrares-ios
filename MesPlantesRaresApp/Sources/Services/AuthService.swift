@@ -81,16 +81,3 @@ final class AuthService {
     }
 }
 
-// Make User Codable for Keychain storage
-extension User: Codable {
-    enum CodingKeys: String, CodingKey {
-        case id, username, email
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(username, forKey: .username)
-        try container.encode(email, forKey: .email)
-    }
-}

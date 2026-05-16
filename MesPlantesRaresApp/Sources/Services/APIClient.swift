@@ -86,7 +86,7 @@ final class APIClient {
     // MARK: - Core request
 
     private func request<T: Decodable>(_ method: String, _ path: String, body: Encodable? = nil) async throws -> T {
-        guard var components = URLComponents(string: baseURL + path) else {
+        guard let components = URLComponents(string: baseURL + path) else {
             throw APIError.invalidURL
         }
 
@@ -182,22 +182,6 @@ struct AnyEncodable: Encodable {
     func encode(to encoder: Encoder) throws { try value.encode(to: encoder) }
 }
 
-extension Dictionary<String, String>: @retroactive Encodable {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: DynamicCodingKey.self)
-        for (key, value) in self {
-            guard let codingKey = DynamicCodingKey(stringValue: key) else { continue }
-            try container.encode(value, forKey: codingKey)
-        }
-    }
-}
-
-struct DynamicCodingKey: CodingKey {
-    var stringValue: String
-    var intValue: Int?
-    init?(stringValue: String) { self.stringValue = stringValue }
-    init?(intValue: Int) { nil }
-}
 
 struct PublicStats: Codable {
     let totalUsers: Int?
